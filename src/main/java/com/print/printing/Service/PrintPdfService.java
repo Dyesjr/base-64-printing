@@ -50,17 +50,27 @@ package com.print.printing.Service;
 import com.print.printing.repository.PdfProvider;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.printing.PDFPageable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
+import java.util.Base64;
+
+
+
+
 
 @Service
 public class PrintPdfService {
-    private final PdfProvider pdfProvider;
 
-    public PrintPdfService(PdfProvider pdfProvider) {
+
+    private final PdfProvider pdfProvider;
+    private byte[] pdfBytes;
+
+    @Autowired
+    public PrintPdfService(PdfProvider pdfProvider) throws IOException {
         this.pdfProvider = pdfProvider;
     }
 
@@ -74,6 +84,13 @@ public class PrintPdfService {
             byte[] pdfBytes = decodeBase64(base64EncodedPdf);
             printDocument(pdfBytes);
         }
+
+
+        PDDocument document = PDDocument.load(pdfBytes);
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setPageable(new PDFPageable(document));
+        job.print();
+        document.close();
     }
 
     private void printDocument(byte[] pdfBytes) throws IOException, PrinterException {
@@ -84,8 +101,13 @@ public class PrintPdfService {
         }
     }
 
+
+
+
+
     private byte[] decodeBase64(String base64EncodedPdf) {
-        // Add logic to decode base64-encoded PDF
-        return null;
+
+        return Base64.getDecoder().decode(base64EncodedPdf);
+//        return Base64.decodeBase64(base64EncodedPdf);
     }
 }

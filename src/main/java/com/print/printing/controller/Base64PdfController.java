@@ -5,6 +5,7 @@ import com.print.printing.repository.Base64PdfService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,16 +27,28 @@ public class Base64PdfController {
         return  base64PdfService.printBase64Pdf(base64EncodedPdf);
     }
 
-    @PostMapping("/printpdf/physical")
-    public ResponseEntity<Object> printPhysicalPdf(@RequestBody String pdfFilePath){
+//    @PostMapping("/printpdf/physical")
+//    public ResponseEntity<Object> printPhysicalPdf(@RequestBody String pdfFilePath){
+//        try {
+//            // Delegate printing to the PrintPdfService
+//            printPdfService.printPdf(pdfFilePath, null); // Assuming no base64-encoded PDF is provided
+//            return ResponseEntity.ok("Printing initiated.");
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body("Failed to initiate printing.");
+//        }
+//    }
+
+    @PostMapping("/printpdf/physical/{fileName}")
+    public ResponseEntity<Object> printPhysicalPdf(@PathVariable String fileName){
         try {
             // Delegate printing to the PrintPdfService
-            printPdfService.printPdf(pdfFilePath, null); // Assuming no base64-encoded PDF is provided
+            printPdfService.printPdf(fileName, null); // Assuming no base64-encoded PDF is provided
             return ResponseEntity.ok("Printing initiated.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to initiate printing.");
         }
     }
+
 
 //    @PostMapping("/printpdf/base64")
 //    public ResponseEntity<Object> printBase64Pdf(@RequestBody String base64EncodedPdf) {
