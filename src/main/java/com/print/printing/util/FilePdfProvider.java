@@ -15,10 +15,6 @@ public class FilePdfProvider implements PdfProvider {
     @Value("${pdf.file.path}")
     private String defaultfilePath;
 
-//    public FilePdfProvider(String defaultfilePath) {
-//        this.defaultfilePath = defaultfilePath;
-//    }
-
     @Override
     public byte[] getPdfBytes(String filePath) throws IOException {
         if (filePath == null || filePath.isEmpty()) {
