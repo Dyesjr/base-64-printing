@@ -57,6 +57,7 @@ public class PrintPdfService {
             PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
             return printServices.length > 0;
         } catch (Exception e) {
+            System.err.println("Error occurred while checking printer availability: " + e.getMessage());
             return false;
         }
     }
