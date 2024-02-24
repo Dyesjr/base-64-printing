@@ -1,64 +1,95 @@
 package com.print.printing.Service;
 
+
 import com.print.printing.repository.PdfProvider;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.printing.PDFPageable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
-import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
+import java.util.List;
 
 @Service
 public class PrintPdfService {
 
+    private final PdfScannerService pdfScannerService;
     private final PdfProvider pdfProvider;
 
     @Autowired
-    public PrintPdfService(PdfProvider pdfProvider) {
+    public PrintPdfService(PdfScannerService pdfScannerService, PdfProvider pdfProvider) {
+        this.pdfScannerService = pdfScannerService;
         this.pdfProvider = pdfProvider;
     }
 
-    public ResponseEntity<Object> printPdf(String pdfFilePath, String base64EncodedPdf) throws IOException, PrinterException {
-        if ((pdfFilePath == null && base64EncodedPdf == null) || (pdfFilePath != null && base64EncodedPdf != null)) {
-            throw new IllegalArgumentException("Exactly one of pdfFilePath or base64EncodedPdf must be provided.");
+    public void printPdf() {
+        Logger logger = LoggerFactory.getLogger(this.getClass());
+
+        if (!isDefaultPrinterConfigured()) {
+            logger.info("No default printer configured. Skipping printing process.");
+            return;
         }
 
-        byte[] pdfBytes;
-        if (pdfFilePath != null) {
-            pdfBytes = pdfProvider.getPdfBytes(pdfFilePath);
-        } else {
-            pdfBytes = decodeBase64(base64EncodedPdf);
+        if (!isPrinterAvailable()) {
+            logger.info("No printer found. Skipping printing process.");
+            return;
         }
 
-        try (PDDocument document = PDDocument.load(pdfBytes)) {
-            PrinterJob job = PrinterJob.getPrinterJob();
-            job.setPageable(new PDFPageable(document));
-            job.print();
+
+        List<File> scannedFiles = pdfScannerService.scanPdfs();
+
+
+        for (File file : scannedFiles) {
+            String filePath;
+            try {
+                filePath = constructFilePath();
+
+                if (!pdfScannerService.isPrinterAvailable()) {
+                    logger.info("No printer found. Skipping printing of {}", file.getName());
+                    continue;
+                }
+
+                logger.info("Printing PDF: {}", filePath);
+
+                byte[] pdfBytes = getPdfBytesFromFile(filePath);
+
+                // Print the PDF using the acquired bytes
+                try (PDDocument document = PDDocument.load(pdfBytes)) {
+                    PrinterJob job = PrinterJob.getPrinterJob();
+                    job.setPageable(new PDFPageable(document));
+                    job.print();
+                }
+
+                logger.info("Successfully printed PDF: {}", filePath);
+
+                // Delete the printed PDF after successful printing
+                pdfScannerService.deletePdf(file);
+
+            }  catch (Exception e) {
+            logger.error("Error processing PDF: {}", e.getMessage());
+            // Handle general errors here (e.g., logging, error codes, recovery actions)
+            // return appropriate ResponseEntity based on your error handling strategy
         }
 
-        return ResponseEntity.ok("Printing process initiated.");
+            }
+
+
+        ResponseEntity.ok("Printing process completed.").hasBody();
     }
 
-    private byte[] decodeBase64(String base64EncodedPdf) {
-        return Base64.getDecoder().decode(base64EncodedPdf);
-    }
-
-    public boolean isPrinterAvailable() {
-        try {
-            PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
-            return printServices.length > 0;
-        } catch (Exception e) {
-            return false;
-        }
+    private boolean isDefaultPrinterConfigured() {
+        PrintService defaultPrinter = PrintServiceLookup.lookupDefaultPrintService();
+        return defaultPrinter!= null;
     }
 
     public byte[] getPdfBytesFromFile(String filePath) throws IOException {
@@ -71,4 +102,29 @@ public class PrintPdfService {
             return Files.readAllBytes(path);
         }
     }
+
+    public boolean isPrinterAvailable() {
+        Logger logger = LoggerFactory.getLogger(this.getClass());
+        try {
+            PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
+            if (printServices.length > 0) {
+                logger.info("Printer found.");
+                return true;
+            } else {
+                logger.info("No printer found.");
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("Error checking printer availability: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Implement this method based on your scanned file data structure and how you store file paths
+    private String constructFilePath() {
+        // This may involve accessing properties or attributes within the scannedFile object
+        throw new UnsupportedOperationException("Implement constructFilePath based on your file structure");
+    }
+
+
 }
