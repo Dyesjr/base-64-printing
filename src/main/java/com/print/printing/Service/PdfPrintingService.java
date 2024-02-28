@@ -3,6 +3,7 @@ package com.print.printing.Service;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.printing.PDFPageable;
 import org.apache.pdfbox.printing.PDFPrintable;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 
+import static com.print.printing.Service.EscPosConverter.sendEscPosCommandsToPrinter;
 import static javax.print.attribute.standard.MediaSize.*;
 
 
@@ -113,34 +115,8 @@ public class PdfPrintingService {
         return defaultPrinter != null;
     }
 
-    public boolean printPdf(byte[] pdfBytes) {
-        try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
-
-            PrintRequestAttributeSet attributeSet = new HashPrintRequestAttributeSet();
-
-// Set the paper size directly to 80mm width
-            attributeSet.add(new MediaPrintableArea(0, 0, 80, 100, MediaPrintableArea.MM));
-
-            PrintService defaultPrinter = PrintServiceLookup.lookupDefaultPrintService();
-            if (defaultPrinter != null) {
-                try {
-                    PrinterJob printerJob = PrinterJob.getPrinterJob();
-                    printerJob.setPrintService(defaultPrinter);
-                    printerJob.setPrintable(new PDFPrintable(document));
-                    printerJob.print(attributeSet); // Pass the attribute set to the print method
-                    logger.info("PDF printed successfully.");
-                    return true;
-                } catch (PrinterException e) {
-                    logger.error("Error printing PDF: {}", e.getMessage());
-                    return false;
-                }
-            } else {
-                logger.error("Default printer is not configured.");
-                return false;
-            }
-
-
-
+//    public boolean printPdf(byte[] pdfBytes) {
+//        try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
 //            PrintService defaultPrinter = PrintServiceLookup.lookupDefaultPrintService();
 //            if (defaultPrinter == null) {
 //                logger.error("Default printer is not configured.");
@@ -152,9 +128,55 @@ public class PdfPrintingService {
 //            printerJob.print();
 //            logger.info("PDF printed successfully.");
 //            return true;
-        } catch (IOException e) {
+//        } catch (IOException | PrinterException e) {
+//            logger.error("Error printing PDF: {}", e.getMessage());
+//            return false;
+//        }
+//    }
+
+
+
+
+    public boolean printPdf(byte[] pdfBytes) {
+        try (PDDocument document = PDDocument.load(pdfBytes)) {
+            // Extract text from PDF
+            PDFTextStripper textStripper = new PDFTextStripper();
+            String text = textStripper.getText(document);
+
+            // Convert text to ESC/POS commands (pseudocode)
+            String escPosCommands = convertTextToEscPos(text);
+
+            // Send ESC/POS commands to printer
+            sendEscPosCommandsToPrinter(escPosCommands);
+
+            logger.info("PDF printed successfully.");
+            return true;
+        } catch (IOException | PrinterException e) {
             logger.error("Error printing PDF: {}", e.getMessage());
             return false;
         }
     }
+
+    public String convertTextToEscPos(String plainText) {
+        Logger logger = LoggerFactory.getLogger(this.getClass());
+
+        // Set font style and size
+
+        return "\u001B~\u0001" + // Select font A
+                "\u001B}\u0001" + // Select double-height mode
+                "\u001B{\u0001" + // Select double-width mode
+
+                // Print text
+                plainText +
+
+                // Reset font style and size
+                "\u001B~\u0000" + // Cancel font selection
+                "\u001B}\u0000" + // Cancel double-height mode
+                "\u001B{\u0000" + // Cancel double-width mode
+
+                // Add paper cut command
+                "\u001DV\u0001";
+    }
+
+
 }

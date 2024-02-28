@@ -25,7 +25,7 @@ public class PdfScannerService {
     @Value("${pdf.file.path}")
     private String targetFolderPath;
 //    private Logger logger;
-private static final Logger logger = LoggerFactory.getLogger(PdfScannerService.class);
+static final Logger logger = LoggerFactory.getLogger(PdfScannerService.class);
 
 
     public PdfScannerService(String targetFolder) {
