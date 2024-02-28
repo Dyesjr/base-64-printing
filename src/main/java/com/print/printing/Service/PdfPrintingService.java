@@ -17,7 +17,10 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.*;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Base64;
+
+import static javax.print.attribute.standard.MediaSize.*;
 
 
 //@Service
@@ -112,18 +115,44 @@ public class PdfPrintingService {
 
     public boolean printPdf(byte[] pdfBytes) {
         try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
+
+            PrintRequestAttributeSet attributeSet = new HashPrintRequestAttributeSet();
+
+// Set the paper size directly to 80mm width
+            attributeSet.add(new MediaPrintableArea(0, 0, 80, 100, MediaPrintableArea.MM));
+
             PrintService defaultPrinter = PrintServiceLookup.lookupDefaultPrintService();
-            if (defaultPrinter == null) {
+            if (defaultPrinter != null) {
+                try {
+                    PrinterJob printerJob = PrinterJob.getPrinterJob();
+                    printerJob.setPrintService(defaultPrinter);
+                    printerJob.setPrintable(new PDFPrintable(document));
+                    printerJob.print(attributeSet); // Pass the attribute set to the print method
+                    logger.info("PDF printed successfully.");
+                    return true;
+                } catch (PrinterException e) {
+                    logger.error("Error printing PDF: {}", e.getMessage());
+                    return false;
+                }
+            } else {
                 logger.error("Default printer is not configured.");
                 return false;
             }
-            PrinterJob printerJob = PrinterJob.getPrinterJob();
-            printerJob.setPrintService(defaultPrinter);
-            printerJob.setPrintable(new PDFPrintable(document));
-            printerJob.print();
-            logger.info("PDF printed successfully.");
-            return true;
-        } catch (IOException | PrinterException e) {
+
+
+
+//            PrintService defaultPrinter = PrintServiceLookup.lookupDefaultPrintService();
+//            if (defaultPrinter == null) {
+//                logger.error("Default printer is not configured.");
+//                return false;
+//            }
+//            PrinterJob printerJob = PrinterJob.getPrinterJob();
+//            printerJob.setPrintService(defaultPrinter);
+//            printerJob.setPrintable(new PDFPrintable(document));
+//            printerJob.print();
+//            logger.info("PDF printed successfully.");
+//            return true;
+        } catch (IOException e) {
             logger.error("Error printing PDF: {}", e.getMessage());
             return false;
         }
