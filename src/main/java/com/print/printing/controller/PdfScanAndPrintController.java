@@ -47,7 +47,7 @@ public class PdfScanAndPrintController {
         logger.info("Starting scan and printing process");
 
         PrintRequestAttributeSet attributeSet = new HashPrintRequestAttributeSet();
-        attributeSet.add(new MediaPrintableArea(0, 0, 80, 100, MediaPrintableArea.MM));
+        attributeSet.add(new MediaPrintableArea(0, 0, 75, 100, MediaPrintableArea.MM));
 
         // Check if default printer is configured
         if (!pdfPrintingService.isDefaultPrinterConfigured()) {
