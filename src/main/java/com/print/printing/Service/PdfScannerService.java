@@ -49,28 +49,11 @@ static final Logger logger = LoggerFactory.getLogger(PdfScannerService.class);
         return pdfs;
     }
 
-    public void deletePdf(File pdf) {
-        try {
-            Files.delete(pdf.toPath());
-            logger.info("Deleting PDF: {}", pdf.getPath());
-        } catch (IOException e) {
-            logger.error("Failed to delete PDF " + e.getMessage());
-        }
-    }
 
-    public boolean isPrinterAvailable() {
-        PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
-        return printServices.length > 0;
-    }
 
-    public String convertPdfToBase64(File pdf) {
-        try (FileInputStream fileInputStream = new FileInputStream(pdf)) {
-            byte[] pdfBytes = IOUtils.toByteArray(fileInputStream);
-            return Base64.getEncoder().encodeToString(pdfBytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+
+
+
 
     public byte[] convertPdfToByteArray(File pdf) {
         try {

@@ -168,17 +168,15 @@ public class PdfPrintingService {
         escPosCommands.append("\u000C");
         escPosCommands.append("\n\n\n");
 
-        // Iterate through each line in the text
         for (String line : text.split("\n")) {
             // Add line feed before each line except the first
             if (escPosCommands.length() > 0) {
                 escPosCommands.append("\n");
             }
 
-            // Apply basic formatting (replace with your desired logic)
-            escPosCommands.append(line); // Print the line as it is (example)
+            escPosCommands.append(line);
 
-            escPosCommands.append("\u000C"); // Form feed command
+            escPosCommands.append("\u000C");
 
         }
 
